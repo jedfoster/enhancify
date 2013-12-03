@@ -1,0 +1,52 @@
+<form id="form1" method="post" action="/orders">
+  <ol>
+    <li class="accordion-step">
+      <header class="accordion-header">
+        <h1>Billing address</h1>
+      </header>
+      <fieldset>
+        <ol>
+          <li>
+            <select name="country">
+              <option value="USA">United States</option>
+              <option value="IRL">Ireland</option>
+            </select>
+          </li>
+        </ol>
+      </fieldset>
+    </li>
+    <li class="accordion-step">
+      <header class="accordion-header">
+        <h1>Payment information</h1>
+      </header>
+      <fieldset>
+        <ol>
+          <li>
+            <input id="card_type_id_1" name="card_type_id" type="radio" value="1" />
+            <label for="card_type_id_1">Mastercard</label>
+            <input id="card_type_id_2" name="card_type_id" type="radio" value="2" />
+            <label for="card_type_id_2">Visa</label>
+            <input id="card_type_id_3" name="card_type_id" type="radio" value="3" />
+            <label for="card_type_id_3">American Express</label>
+            <input id="card_type_id_4" name="card_type_id" type="radio" value="4" />
+            <label for="card_type_id_4">Discover</label>
+          </li>
+        </ol>
+      </fieldset>
+    </li>
+    <li class="accordion-step">
+      <header class="accordion-header">
+        <h1>Reference information</h1>
+      </header>
+      <fieldset>
+        <ol>
+          <li>
+            <label for="licensee_name">Licensee name</label>
+            <input id="licensee_name" name="licensee_name" type="text" />
+          </li>
+        </ol>
+      </fieldset>
+      <button type="submit">Pay now</button>
+    </li>
+  </ol>
+</form>
