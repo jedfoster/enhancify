@@ -2,6 +2,7 @@
 <html>
   <head>
     <script type="text/javascript" src="lib/jquery-1.10.2/jquery.min.js"></script>
+    <script type="text/javascript" src="lib/jquery-validation-1.11.1/jquery.validate.min.js"></script>
     <script type="text/javascript" src="src/jquery.accordionForm.js"></script>
   </head>
   <body>
@@ -14,11 +15,14 @@
           <fieldset>
             <ol>
               <li>
-                <select name="country">
+                <select id="country" name="country">
                   <option value="USA">United States</option>
                   <option value="IRL">Ireland</option>
                 </select>
               </li>
+              <li>
+                <label for="name">Name</label>
+                <input id="name" name="name" type="text" value="abc" required />
             </ol>
           </fieldset>
         </li>
@@ -38,6 +42,10 @@
                 <input id="card_type_id_4" name="card_type_id" type="radio" value="4" />
                 <label for="card_type_id_4">Discover</label>
               </li>
+              <li>
+                <label for="credit_card_no">Credit card number</label>
+                <input id="credit_card_no" name="credit_card_no" type="text" required />
+              </li>
             </ol>
           </fieldset>
         </li>
@@ -49,7 +57,7 @@
             <ol>
               <li>
                 <label for="licensee_name">Licensee name</label>
-                <input id="licensee_name" name="licensee_name" type="text" />
+                <input id="licensee_name" name="licensee_name" type="text" required />
               </li>
             </ol>
           </fieldset>
@@ -59,7 +67,22 @@
     </form>
     <script type="text/javascript">
       var form1 = $("#form1")
-      form1.accordionify()
+
+      form1.accordionify({
+        onCollapse: addSummary,
+        onExpand: removeSummary
+      })
+
+      function addSummary(step) {
+        console.log("collapsing " + step.element.attr("id"))
+        var summary = $('<p class="accordion-summary">' + step.element.find("#country").val() + '</p>')
+        step.element.append(summary)
+      }
+
+      function removeSummary(step) {
+        console.log("expanding " + step.element.attr("id"))
+        step.element.find("p.accordion-summary").remove()
+      }
     </script>
   </body>
 </html>

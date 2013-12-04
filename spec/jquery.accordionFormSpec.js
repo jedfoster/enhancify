@@ -44,7 +44,27 @@ describe('An accordion form, ', function() {
       return expect(firstStep).toContain('button[type=button]');
     });
   });
-  describe('when a step is completed, ', function() {
+  describe('when a step is complete and the continue button is clicked, ', function() {
+    var firstStep, secondStep;
+    firstStep = null;
+    secondStep = null;
+    beforeEach(function() {
+      firstStep = form.find('.accordion-step').first();
+      secondStep = firstStep.next();
+      firstStep.find('#name').val('foobar');
+      return firstStep.find('button').click();
+    });
+    it('should collapse the completed step', function() {
+      return expect(firstStep).toBeCollapsed();
+    });
+    it('should display an edit button in the completed step header', function() {
+      return expect(firstStep.find('.accordion-header')).toContain('button[type=button]');
+    });
+    return it('should expand the next step', function() {
+      return expect(secondStep).toBeExpanded();
+    });
+  });
+  describe('when a step is incomplete and the continue button is clicked, ', function() {
     var firstStep, secondStep;
     firstStep = null;
     secondStep = null;
@@ -53,14 +73,12 @@ describe('An accordion form, ', function() {
       secondStep = firstStep.next();
       return firstStep.find('button').click();
     });
-    it('should collapse the completed step', function() {
-      return expect(firstStep).toBeCollapsed();
-    });
-    return it('should expand the next step', function() {
-      return expect(secondStep).toBeExpanded();
+    return it('should do nothing', function() {
+      expect(firstStep).toBeExpanded();
+      return expect(secondStep).toBeCollapsed();
     });
   });
-  return describe('when a previous step header is clicked, ', function() {
+  return describe('when an edit button is clicked, ', function() {
     var firstStep, secondStep;
     firstStep = null;
     secondStep = null;
@@ -68,7 +86,7 @@ describe('An accordion form, ', function() {
       firstStep = form.find('.accordion-step').first();
       secondStep = firstStep.next();
       firstStep.find('button').click();
-      return firstStep.find('.accordion-header').click();
+      return firstStep.find('.accordion-header button').click();
     });
     it('should collapse the current step', function() {
       return expect(secondStep).toBeCollapsed();
@@ -76,10 +94,8 @@ describe('An accordion form, ', function() {
     it('should expand the selected step', function() {
       return expect(firstStep).toBeExpanded();
     });
-    return it('should disable expansion for all steps after the selected step', function() {
-      secondStep.find('button').click();
-      expect(secondStep).toBeCollapsed();
-      return expect(firstStep).toBeExpanded();
+    return it('should remove the edit button for all steps after the selected step', function() {
+      return expect(secondStep.find('.accordion-header button')).toBeHidden();
     });
   });
 });

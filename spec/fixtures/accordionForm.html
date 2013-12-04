@@ -7,10 +7,14 @@
       <fieldset>
         <ol>
           <li>
-            <select name="country">
+            <select id="country" name="country">
               <option value="USA">United States</option>
               <option value="IRL">Ireland</option>
             </select>
+          </li>
+          <li>
+            <label for="name">Name</label>
+            <input id="name" name="name" type="text" required="required" />
           </li>
         </ol>
       </fieldset>
@@ -30,6 +34,10 @@
             <label for="card_type_id_3">American Express</label>
             <input id="card_type_id_4" name="card_type_id" type="radio" value="4" />
             <label for="card_type_id_4">Discover</label>
+          </li>
+          <li>
+            <label for="credit_card_no">Credit card number</label>
+            <input id="credit_card_no" name="credit_card_no" type="text" />
           </li>
         </ol>
       </fieldset>
