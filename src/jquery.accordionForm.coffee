@@ -1,79 +1,83 @@
 (($) ->
   $.fn.accordionify = (options) ->
     return @each ->
-      new AccordionForm(this, options)
+      element = $(this)
+      return new AccordionForm(element, options) unless element.data('accordionForm')
 
   class AccordionForm
-    constructor: (element, options) ->
-      @element = $(element)
-      
-      # Enable jquery validation
-      @element.validate({
-        ignore: ':hidden',
-        showErrors: ->
-        })
-
+    constructor: (@_element, options) ->
       @_options = $.extend(
           stepSelector: '.accordion-step',
-          headerSelector: '.accordion-header'
+          headerSelector: '.accordion-header',
+          editButtonClass: 'accordion-edit',
+          continueButtonClass: 'accordion-continue'
+          isStepComplete: (element) -> true
+          onCollapse: (element) ->,
+          onExpand: (element) ->,
         ,
         options)
 
-      stepElements = @element.find(@_options.stepSelector)
-      @steps = stepElements.map (index, element) =>
-        new AccordionStep(this, index, (index == stepElements.length-1), element, @_options)
+      stepElements = @_element.find(@_options.stepSelector)
+      @_steps = stepElements.map (index, element) =>
+        new AccordionStep(this, index, (index == stepElements.length-1), $(element), @_options)
 
       @_transitionTo(0)
-      @_collapseNextSteps()
+      @_collapseSubsequentSteps()
 
     continue: ->
-      return if @currentStep.isLast
-      if @currentStepIsValid()
-        @_transitionTo(@currentStep.index+1)
+      if @_currentStep.isComplete() and !@_currentStep.isLast
+        @_transitionTo(@_currentStep.index+1)
+        return true
+      return false
 
     goBackTo: (index) ->
-      return if index < 0 or index >= @currentStep.index
+      return if index < 0 or index >= @_currentStep.index
       @_transitionTo(index)    
-      @_collapseNextSteps()
-
-    currentStepIsValid: ->
-      return @element.valid()
+      @_collapseSubsequentSteps()
 
     _transitionTo: (index) ->
-      if @currentStep? then @currentStep.collapse(true)
-      @currentStep = @steps[index]
-      @currentStep.expand()
+      if @_currentStep? then @_currentStep.collapse(true)
+      @_currentStep = @_steps[index]
+      @_currentStep.expand()
 
-    _collapseNextSteps: ->
-      for step in @steps.slice(@currentStep.index+1) 
+    _collapseSubsequentSteps: ->
+      for step in @_steps.slice(@_currentStep.index+1) 
         step.collapse(false)
 
   class AccordionStep
-    constructor: (@accordionForm, @index, @isLast, element, @_options) ->
-      @element = $(element)
-      @header = @element.find(@_options.headerSelector)
+    constructor: (@_accordionForm, @index, @isLast, @_element, @_options) ->
+      @_header = @_element.find(@_options.headerSelector)
 
       unless @isLast
-        @appendEditButton()
-        @appendContinueButton()
+        @_appendEditButton()
+        @_appendContinueButton()
 
     expand: ->
-      @header.siblings().slideDown(500)
-      @header.find('button').hide()
+      $('html, body').animate( { scrollTop: @_element.offset().top } );
+      @_header.find('button.' + @_options.editButtonClass).hide()
+      @_header.siblings().slideDown(500)
+      @_options.onExpand(@_element[0])
 
     collapse: (showEditButton) ->
-      @header.siblings().hide()
-      if (showEditButton) then @header.find('button').show() else @header.find('button').hide()
+      editButton = @_header.find('button.' + @_options.editButtonClass)
+      if (showEditButton) then editButton.show() else editButton.hide()
+      @_header.siblings().hide()
+      @_options.onCollapse(@_element[0])
 
-    appendEditButton: ->
+    isComplete: ->
+      return @_options.isStepComplete(@_element)
+
+    _appendEditButton: ->
       button = $('<button type="button">Edit</button>')
+      button.addClass(@_options.editButtonClass)
       button.hide()
-      button.click => @accordionForm.goBackTo(@index)
-      @header.append(button)
+      button.click => @_accordionForm.goBackTo(@index)
+      @_header.append(button)
 
-    appendContinueButton: ->
+    _appendContinueButton: ->
       button = $('<button type="button">Continue</button>')
-      button.click => @accordionForm.continue()
-      @element.append(button)
+      button.addClass(@_options.continueButtonClass)
+      button.click => @_accordionForm.continue()
+      @_element.append(button)
 
 )(jQuery)

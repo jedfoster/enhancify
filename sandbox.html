@@ -8,7 +8,7 @@
   <body>
     <form id="form1" method="post" action="/orders">
       <ol>
-        <li class="accordion-step">
+        <li id="step-1" class="accordion-step">
           <header class="accordion-header">
             <h1>Billing address</h1>
           </header>
@@ -22,11 +22,11 @@
               </li>
               <li>
                 <label for="name">Name</label>
-                <input id="name" name="name" type="text" value="abc" required />
+                <input id="name" name="name" type="text" value="abc" required data-msg-required="name is required" />
             </ol>
           </fieldset>
         </li>
-        <li class="accordion-step">
+        <li id="step-2" class="accordion-step">
           <header class="accordion-header">
             <h1>Payment information</h1>
           </header>
@@ -49,7 +49,7 @@
             </ol>
           </fieldset>
         </li>
-        <li class="accordion-step">
+        <li id="step-3" class="accordion-step">
           <header class="accordion-header">
             <h1>Reference information</h1>
           </header>
@@ -65,24 +65,28 @@
         </li>
       </ol>
     </form>
+    <aside style="float:right">
+      <button id="exclude_payment_info" type="button">Exclude payment info</button>
+      <button id="include_payment_info" type="button">Include payment info</button>
+    </aside>
     <script type="text/javascript">
       var form1 = $("#form1")
-
-      form1.accordionify({
-        onCollapse: addSummary,
-        onExpand: removeSummary
+        
+      form1.validate({
+        ignore: ':hidden' // Use jquery validation to determine if a step is complete
+      })
+        
+      accordion = form1.accordionify({
+        isStepComplete: function(element){return $(form1).valid();},
       })
 
-      function addSummary(step) {
-        console.log("collapsing " + step.element.attr("id"))
-        var summary = $('<p class="accordion-summary">' + step.element.find("#country").val() + '</p>')
-        step.element.append(summary)
-      }
+      $("#exclude_payment_info").click(function(){
+        accordion.excludeStep(1)
+      })
 
-      function removeSummary(step) {
-        console.log("expanding " + step.element.attr("id"))
-        step.element.find("p.accordion-summary").remove()
-      }
+      $("#include_payment_info").click(function(){
+        accordion.includeStep(1)
+      })
     </script>
   </body>
 </html>

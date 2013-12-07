@@ -1,5 +1,6 @@
 describe 'An accordion form, ', ->
   form = null
+  isStepComplete = false
   
   beforeEach ->
     @addMatchers({
@@ -14,7 +15,9 @@ describe 'An accordion form, ', ->
     jasmine.getFixtures().fixturesPath = 'spec/fixtures/';
     loadFixtures('accordionForm.html')
     form = $('#form1')
-    form.accordionify()
+    form.accordionify(
+      isStepComplete: (element) -> isStepComplete
+      )
 
   describe 'when initially rendered, ', ->
 
@@ -33,9 +36,9 @@ describe 'An accordion form, ', ->
     secondStep = null
 
     beforeEach ->
+      isStepComplete = true
       firstStep = form.find('.accordion-step').first()
       secondStep = firstStep.next()
-      firstStep.find('#name').val('foobar')
       firstStep.find('button').click()
 
     it 'should collapse the completed step', ->
@@ -52,6 +55,7 @@ describe 'An accordion form, ', ->
     secondStep = null
 
     beforeEach ->
+      isStepComplete = false
       firstStep = form.find('.accordion-step').first()
       secondStep = firstStep.next()
       firstStep.find('button').click()

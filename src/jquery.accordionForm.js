@@ -3,62 +3,64 @@
   var AccordionForm, AccordionStep;
   $.fn.accordionify = function(options) {
     return this.each(function() {
-      return new AccordionForm(this, options);
+      var element;
+      element = $(this);
+      if (!element.data('accordionForm')) {
+        return new AccordionForm(element, options);
+      }
     });
   };
   AccordionForm = (function() {
-    function AccordionForm(element, options) {
+    function AccordionForm(_element, options) {
       var stepElements,
         _this = this;
-      this.element = $(element);
-      this.element.validate({
-        ignore: ':hidden',
-        showErrors: function() {}
-      });
+      this._element = _element;
       this._options = $.extend({
         stepSelector: '.accordion-step',
-        headerSelector: '.accordion-header'
+        headerSelector: '.accordion-header',
+        editButtonClass: 'accordion-edit',
+        continueButtonClass: 'accordion-continue',
+        isStepComplete: function(element) {
+          return true;
+        },
+        onCollapse: function(element) {},
+        onExpand: function(element) {}
       }, options);
-      stepElements = this.element.find(this._options.stepSelector);
-      this.steps = stepElements.map(function(index, element) {
-        return new AccordionStep(_this, index, index === stepElements.length - 1, element, _this._options);
+      stepElements = this._element.find(this._options.stepSelector);
+      this._steps = stepElements.map(function(index, element) {
+        return new AccordionStep(_this, index, index === stepElements.length - 1, $(element), _this._options);
       });
       this._transitionTo(0);
-      this._collapseNextSteps();
+      this._collapseSubsequentSteps();
     }
 
     AccordionForm.prototype["continue"] = function() {
-      if (this.currentStep.isLast) {
-        return;
+      if (this._currentStep.isComplete() && !this._currentStep.isLast) {
+        this._transitionTo(this._currentStep.index + 1);
+        return true;
       }
-      if (this.currentStepIsValid()) {
-        return this._transitionTo(this.currentStep.index + 1);
-      }
+      return false;
     };
 
     AccordionForm.prototype.goBackTo = function(index) {
-      if (index < 0 || index >= this.currentStep.index) {
+      if (index < 0 || index >= this._currentStep.index) {
         return;
       }
       this._transitionTo(index);
-      return this._collapseNextSteps();
-    };
-
-    AccordionForm.prototype.currentStepIsValid = function() {
-      return this.element.valid();
+      return this._collapseSubsequentSteps();
     };
 
     AccordionForm.prototype._transitionTo = function(index) {
-      if (this.currentStep != null) {
-        this.currentStep.collapse(true);
+      if (this._currentStep != null) {
+        this._currentStep.collapse(true);
       }
-      this.currentStep = this.steps[index];
-      return this.currentStep.expand();
+      this._currentStep = this._steps[index];
+      return this._currentStep.expand();
     };
 
-    AccordionForm.prototype._collapseNextSteps = function() {
+    AccordionForm.prototype._collapseSubsequentSteps = function() {
       var step, _i, _len, _ref, _results;
-      _ref = this.steps.slice(this.currentStep.index + 1);
+      _ref = this._steps.slice(this._currentStep.index + 1);
       _results = [];
       for (_i = 0, _len = _ref.length; _i < _len; _i++) {
         step = _ref[_i];
@@ -71,52 +73,65 @@
 
   })();
   return AccordionStep = (function() {
-    function AccordionStep(accordionForm, index, isLast, element, _options) {
-      this.accordionForm = accordionForm;
+    function AccordionStep(_accordionForm, index, isLast, _element, _options) {
+      this._accordionForm = _accordionForm;
       this.index = index;
       this.isLast = isLast;
+      this._element = _element;
       this._options = _options;
-      this.element = $(element);
-      this.header = this.element.find(this._options.headerSelector);
+      this._header = this._element.find(this._options.headerSelector);
       if (!this.isLast) {
-        this.appendEditButton();
-        this.appendContinueButton();
+        this._appendEditButton();
+        this._appendContinueButton();
       }
     }
 
     AccordionStep.prototype.expand = function() {
-      this.header.siblings().slideDown(500);
-      return this.header.find('button').hide();
+      $('html, body').animate({
+        scrollTop: this._element.offset().top
+      });
+      this._header.find('button.' + this._options.editButtonClass).hide();
+      this._header.siblings().slideDown(500);
+      return this._options.onExpand(this._element[0]);
     };
 
     AccordionStep.prototype.collapse = function(showEditButton) {
-      this.header.siblings().hide();
+      var editButton;
+      editButton = this._header.find('button.' + this._options.editButtonClass);
       if (showEditButton) {
-        return this.header.find('button').show();
+        editButton.show();
       } else {
-        return this.header.find('button').hide();
+        editButton.hide();
       }
+      this._header.siblings().hide();
+      return this._options.onCollapse(this._element[0]);
     };
 
-    AccordionStep.prototype.appendEditButton = function() {
+    AccordionStep.prototype.isComplete = function() {
+      return this._options.isStepComplete(this._element);
+    };
+
+    AccordionStep.prototype._appendEditButton = function() {
       var button,
         _this = this;
       button = $('<button type="button">Edit</button>');
+      button.addClass(this._options.editButtonClass);
       button.hide();
       button.click(function() {
-        return _this.accordionForm.goBackTo(_this.index);
+        return _this._accordionForm.goBackTo(_this.index);
       });
-      return this.header.append(button);
+      return this._header.append(button);
     };
 
-    AccordionStep.prototype.appendContinueButton = function() {
+    AccordionStep.prototype._appendContinueButton = function() {
       var button,
         _this = this;
       button = $('<button type="button">Continue</button>');
+      button.addClass(this._options.continueButtonClass);
       button.click(function() {
-        return _this.accordionForm["continue"]();
+        return _this._accordionForm["continue"]();
       });
-      return this.element.append(button);
+      return this._element.append(button);
     };
 
     return AccordionStep;
