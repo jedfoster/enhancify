@@ -1,5 +1,6 @@
 describe 'An accordion form, ', ->
   form = null
+  accordionForm = null
   isStepComplete = false
   
   beforeEach ->
@@ -15,7 +16,7 @@ describe 'An accordion form, ', ->
     jasmine.getFixtures().fixturesPath = 'spec/fixtures/';
     loadFixtures('accordionForm.html')
     form = $('#form1')
-    form.accordionify(
+    accordionForm = form.accordionify(
       isStepComplete: (element) -> isStepComplete
       )
 

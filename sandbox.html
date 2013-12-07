@@ -22,7 +22,8 @@
               </li>
               <li>
                 <label for="name">Name</label>
-                <input id="name" name="name" type="text" value="abc" required data-msg-required="name is required" />
+                <input id="name" name="name" type="text" value="abc" required data-msg-required="Foobar" />
+              </li>
             </ol>
           </fieldset>
         </li>
@@ -73,19 +74,27 @@
       var form1 = $("#form1")
         
       form1.validate({
-        ignore: ':hidden' // Use jquery validation to determine if a step is complete
+        ignore: ':hidden', // Use jquery validation to determine if a step is complete
+        onkeyup: false,
+        onfocusout: false
       })
         
-      accordion = form1.accordionify({
-        isStepComplete: function(element){return $(form1).valid();},
+      var accordionForm = form1.accordionify({
+        isStepComplete: function(element){return form1.valid();},
       })
 
       $("#exclude_payment_info").click(function(){
-        accordion.excludeStep(1)
+        element = $("#step-2")
+        element.removeClass("accordion-step")
+        element.find('input').prop('disabled', true)
+        accordionForm.refresh()
       })
 
       $("#include_payment_info").click(function(){
-        accordion.includeStep(1)
+        element = $("#step-2")
+        element.addClass("accordion-step")
+        element.find('input').prop('disabled', false)
+        accordionForm.refresh()
       })
     </script>
   </body>
