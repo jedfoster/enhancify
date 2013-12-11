@@ -11,59 +11,89 @@
   };
   AccordionForm = (function() {
     function AccordionForm(_element, options) {
+      var stepElements,
+        _this = this;
       this._element = _element;
       this._options = $.extend({
         stepSelector: '.accordion-step',
         headerSelector: '.accordion-header',
         editButtonClass: 'accordion-edit',
         continueButtonClass: 'accordion-continue',
+        getEditButtonText: function(element) {
+          return "Edit";
+        },
+        getContinueButtonText: function(element) {
+          return "Continue";
+        },
         isStepComplete: function(element) {
           return true;
         },
-        onCollapse: function(element) {},
-        onExpand: function(element) {}
+        onStepCollapsed: function(element) {},
+        onStepExpanded: function(element) {},
+        onStepDisabled: function(element) {},
+        onStepEnabled: function(element) {}
       }, options);
-      this._init();
+      stepElements = this._element.find(this._options.stepSelector);
+      this._steps = stepElements.map(function(index, element) {
+        return new AccordionStep(_this, index, index === stepElements.length - 1, $(element), _this._options);
+      });
+      this._transitionTo(this._steps[0]);
+      this._collapseSubsequentSteps();
     }
 
     AccordionForm.prototype["continue"] = function() {
       if (this._currentStep.isComplete() && !this._currentStep.isLast) {
-        this._transitionTo(this._currentStep.index + 1);
-        return true;
+        return this._transitionTo(this._nextEnabledStep());
       }
-      return false;
     };
 
     AccordionForm.prototype.goBackToStep = function(index) {
       var targetStep;
       targetStep = this._steps[index];
-      if ((targetStep != null) && index < this._currentStep.index) {
-        this._transitionTo(index);
+      if ((targetStep != null) && targetStep.isEnabled && index < this._currentStep.index) {
+        this._transitionTo(targetStep);
         return this._collapseSubsequentSteps();
       }
     };
 
-    AccordionForm.prototype.refresh = function() {
-      this._reset();
-      return this._init();
-    };
-
-    AccordionForm.prototype._init = function() {
-      var stepElements,
-        _this = this;
-      stepElements = this._element.find(this._options.stepSelector);
-      this._steps = stepElements.map(function(index, element) {
-        return new AccordionStep(_this, index, index === stepElements.length - 1, $(element), _this._options);
-      });
-      this._transitionTo(0);
-      return this._collapseSubsequentSteps();
-    };
-
-    AccordionForm.prototype._transitionTo = function(index) {
-      if (this._currentStep != null) {
-        this._currentStep.collapse(true);
+    AccordionForm.prototype.disableStep = function(index) {
+      var targetStep;
+      targetStep = this._steps[index];
+      if (targetStep != null) {
+        targetStep.disable();
+        if (targetStep === this._currentStep) {
+          return this["continue"]();
+        }
       }
-      this._currentStep = this._steps[index];
+    };
+
+    AccordionForm.prototype.enableStep = function(index) {
+      var targetStep;
+      targetStep = this._steps[index];
+      if (targetStep != null) {
+        targetStep.enable();
+        if (index < this._currentStep.index) {
+          return this.goBackToStep(index);
+        }
+      }
+    };
+
+    AccordionForm.prototype._nextEnabledStep = function() {
+      var step, _i, _len, _ref;
+      _ref = this._steps.slice(this._currentStep.index + 1);
+      for (_i = 0, _len = _ref.length; _i < _len; _i++) {
+        step = _ref[_i];
+        if (step.isEnabled) {
+          return step;
+        }
+      }
+    };
+
+    AccordionForm.prototype._transitionTo = function(targetStep) {
+      if (this._currentStep != null) {
+        this._currentStep.collapse(this._currentStep.isEnabled);
+      }
+      this._currentStep = targetStep;
       return this._currentStep.expand();
     };
 
@@ -74,18 +104,6 @@
       for (_i = 0, _len = _ref.length; _i < _len; _i++) {
         step = _ref[_i];
         _results.push(step.collapse(false));
-      }
-      return _results;
-    };
-
-    AccordionForm.prototype._reset = function() {
-      var step, _i, _len, _ref, _results;
-      this._currentStep = null;
-      _ref = this._steps;
-      _results = [];
-      for (_i = 0, _len = _ref.length; _i < _len; _i++) {
-        step = _ref[_i];
-        _results.push(step.reset());
       }
       return _results;
     };
@@ -105,58 +123,65 @@
         this._appendEditButton();
         this._appendContinueButton();
       }
+      this.isEnabled = true;
     }
 
     AccordionStep.prototype.expand = function() {
       $('html, body').animate({
         scrollTop: this._element.offset().top
       });
-      this._header.find('button.' + this._options.editButtonClass).hide();
+      if (!this.isLast) {
+        this._editButton.hide();
+      }
       this._header.siblings().slideDown(500);
-      return this._options.onExpand(this._element[0]);
+      return this._options.onStepExpanded(this._element);
     };
 
     AccordionStep.prototype.collapse = function(showEditButton) {
-      var editButton;
-      editButton = this._header.find('button.' + this._options.editButtonClass);
-      if (showEditButton) {
-        editButton.show();
-      } else {
-        editButton.hide();
+      if (!this.isLast) {
+        this._editButton.toggle(showEditButton);
       }
       this._header.siblings().hide();
-      return this._options.onCollapse(this._element[0]);
-    };
-
-    AccordionStep.prototype.reset = function() {
-      this._header.siblings().show();
-      this._header.find('button.' + this._options.editButtonClass).remove();
-      return this._element.find('button.' + this._options.continueButtonClass).remove();
+      return this._options.onStepCollapsed(this._element);
     };
 
     AccordionStep.prototype.isComplete = function() {
       return this._options.isStepComplete(this._element);
     };
 
+    AccordionStep.prototype.disable = function() {
+      if (this.isEnabled) {
+        this.isEnabled = false;
+        this._editButton.hide();
+        this._continueButton.hide();
+        return this._options.onStepDisabled(this._element);
+      }
+    };
+
+    AccordionStep.prototype.enable = function() {
+      if (!this.isEnabled) {
+        this.isEnabled = true;
+        return this._options.onStepEnabled(this._element);
+      }
+    };
+
     AccordionStep.prototype._appendEditButton = function() {
-      var button,
-        _this = this;
-      button = $('<button type="button" class="' + this._options.editButtonClass + '">Edit</button>');
-      button.hide();
-      button.click(function() {
+      var _this = this;
+      this._editButton = $('<button type="button" class="' + this._options.editButtonClass + '">' + this._options.getEditButtonText(this._element) + '</button>');
+      this._editButton.hide();
+      this._editButton.click(function() {
         return _this._accordionForm.goBackToStep(_this.index);
       });
-      return this._header.append(button);
+      return this._header.append(this._editButton);
     };
 
     AccordionStep.prototype._appendContinueButton = function() {
-      var button,
-        _this = this;
-      button = $('<button type="button" class="' + this._options.continueButtonClass + '">Continue</button>');
-      button.click(function() {
+      var _this = this;
+      this._continueButton = $('<button type="button" class="' + this._options.continueButtonClass + '">' + this._options.getContinueButtonText(this._element) + '</button>');
+      this._continueButton.click(function() {
         return _this._accordionForm["continue"]();
       });
-      return this._element.append(button);
+      return this._element.append(this._continueButton);
     };
 
     return AccordionStep;

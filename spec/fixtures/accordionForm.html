@@ -1,6 +1,6 @@
 <form id="form1" method="post" action="/orders">
   <ol>
-    <li class="accordion-step">
+    <li id="step-1" class="accordion-step">
       <header class="accordion-header">
         <h1>Billing address</h1>
       </header>
@@ -14,12 +14,12 @@
           </li>
           <li>
             <label for="name">Name</label>
-            <input id="name" name="name" type="text" required="required" />
+            <input id="name" name="name" type="text" value="abc" />
           </li>
         </ol>
       </fieldset>
     </li>
-    <li class="accordion-step">
+    <li id="step-2" class="accordion-step">
       <header class="accordion-header">
         <h1>Payment information</h1>
       </header>
@@ -42,7 +42,7 @@
         </ol>
       </fieldset>
     </li>
-    <li class="accordion-step">
+    <li id="step-3" class="accordion-step">
       <header class="accordion-header">
         <h1>Reference information</h1>
       </header>

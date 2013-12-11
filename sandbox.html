@@ -6,16 +6,17 @@
     <script type="text/javascript" src="src/jquery.accordionForm.js"></script>
   </head>
   <body>
-    <form id="form1" method="post" action="/orders">
-      <ol>
-        <li id="step-1" class="accordion-step">
-          <header class="accordion-header">
+    <form id="form1" method="post" action="/orders" data-accordion-edit-text="Edit" data-accordion-continue-text="Continue">
+      <ol class="steps">
+        <li id="billing_info">
+          <header>
             <h1>Billing address</h1>
           </header>
           <fieldset>
             <ol>
               <li>
                 <select id="country" name="country">
+                  <option value="">Select a country...</option>
                   <option value="USA">United States</option>
                   <option value="IRL">Ireland</option>
                 </select>
@@ -27,8 +28,8 @@
             </ol>
           </fieldset>
         </li>
-        <li id="step-2" class="accordion-step">
-          <header class="accordion-header">
+        <li id="payment_info">
+          <header>
             <h1>Payment information</h1>
           </header>
           <fieldset>
@@ -50,8 +51,8 @@
             </ol>
           </fieldset>
         </li>
-        <li id="step-3" class="accordion-step">
-          <header class="accordion-header">
+        <li id="reference_info">
+          <header>
             <h1>Reference information</h1>
           </header>
           <fieldset>
@@ -66,35 +67,47 @@
         </li>
       </ol>
     </form>
-    <aside style="float:right">
-      <button id="exclude_payment_info" type="button">Exclude payment info</button>
-      <button id="include_payment_info" type="button">Include payment info</button>
+    <aside>
+      <button id="disable_step_button" type="button">Disable</button>
+      <button id="enable_step_button" type="button">Enable</button>
+      <input id="step_index" type="text" />
     </aside>
     <script type="text/javascript">
       var form1 = $("#form1")
         
       form1.validate({
-        ignore: ':hidden', // Use jquery validation to determine if a step is complete
-        onkeyup: false,
-        onfocusout: false
+        onkeyout: false,
+        onfocusout: false,
       })
         
       var accordionForm = form1.accordionify({
-        isStepComplete: function(element){return form1.valid();},
+        stepSelector: "ol.steps > li",
+        headerSelector: "header",
+        getEditButtonText: function(element){
+          return form1.data('accordion-edit-text')
+        },
+        getContinueButtonText: function(element){
+          return form1.data('accordion-continue-text')
+        },
+        isStepComplete: function(){
+          return form1.valid()
+        },
+        onStepDisabled: function(element){
+          element.find("input, select, textarea").prop("disabled", true)
+        },
+        onStepEnabled: function(element){
+          element.find("input, select, textarea").prop("disabled", false)
+        }
       })
 
-      $("#exclude_payment_info").click(function(){
-        element = $("#step-2")
-        element.removeClass("accordion-step")
-        element.find('input').prop('disabled', true)
-        accordionForm.refresh()
+      $("#disable_step_button").click(function(){
+        var index = $("#step_index").val()
+        accordionForm.disableStep(index)
       })
 
-      $("#include_payment_info").click(function(){
-        element = $("#step-2")
-        element.addClass("accordion-step")
-        element.find('input').prop('disabled', false)
-        accordionForm.refresh()
+      $("#enable_step_button").click(function(){
+        var index = $("#step_index").val()
+        accordionForm.enableStep(index)
       })
     </script>
   </body>

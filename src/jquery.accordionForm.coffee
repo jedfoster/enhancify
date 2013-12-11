@@ -11,90 +11,103 @@
           stepSelector: '.accordion-step',
           headerSelector: '.accordion-header',
           editButtonClass: 'accordion-edit',
-          continueButtonClass: 'accordion-continue'
+          continueButtonClass: 'accordion-continue',
+          getEditButtonText: (element) -> "Edit",
+          getContinueButtonText: (element) -> "Continue",
           isStepComplete: (element) -> true,
-          onCollapse: (element) ->,
-          onExpand: (element) ->,
+          onStepCollapsed: (element) ->,
+          onStepExpanded: (element) ->,
+          onStepDisabled: (element) ->,
+          onStepEnabled: (element) ->,
         ,
         options)
 
-      @_init()
-
-    continue: ->
-      if @_currentStep.isComplete() and !@_currentStep.isLast
-        @_transitionTo(@_currentStep.index+1)
-        return true
-      return false
-
-    goBackToStep: (index) ->
-      targetStep = @_steps[index]
-      if targetStep? and index < @_currentStep.index
-        @_transitionTo(index)    
-        @_collapseSubsequentSteps()
-
-    refresh: ->
-      @_reset()
-      @_init()
-
-    _init: ->
       stepElements = @_element.find(@_options.stepSelector)
       @_steps = stepElements.map (index, element) =>
         new AccordionStep(this, index, (index == stepElements.length-1), $(element), @_options)
 
-      @_transitionTo(0)
+      @_transitionTo(@_steps[0])
       @_collapseSubsequentSteps()
 
-    _transitionTo: (index) ->
-      if @_currentStep? then @_currentStep.collapse(true)
-      @_currentStep = @_steps[index]
+    continue: ->
+      if @_currentStep.isComplete() and !@_currentStep.isLast
+        @_transitionTo(@_nextEnabledStep())
+
+    goBackToStep: (index) ->
+      targetStep = @_steps[index]
+      if targetStep? and targetStep.isEnabled and index < @_currentStep.index
+        @_transitionTo(targetStep)    
+        @_collapseSubsequentSteps()
+
+    disableStep: (index) ->
+      targetStep = @_steps[index]
+      if targetStep?
+        targetStep.disable()
+        if targetStep == @_currentStep then @continue()
+
+    enableStep: (index) ->
+      targetStep = @_steps[index]
+      if targetStep?
+        targetStep.enable()
+        if index < @_currentStep.index then @goBackToStep(index)
+
+    _nextEnabledStep: ->
+      for step in @_steps.slice(@_currentStep.index+1)
+        if step.isEnabled then return step
+
+    _transitionTo: (targetStep) ->
+      if @_currentStep? then @_currentStep.collapse(@_currentStep.isEnabled)
+      @_currentStep = targetStep
       @_currentStep.expand()
 
     _collapseSubsequentSteps: ->
       for step in @_steps.slice(@_currentStep.index+1) 
         step.collapse(false)
 
-    _reset: ->
-      @_currentStep = null
-      for step in @_steps
-        step.reset()
-
   class AccordionStep
     constructor: (@_accordionForm, @index, @isLast, @_element, @_options) ->
       @_header = @_element.find(@_options.headerSelector)
-
       unless @isLast
         @_appendEditButton()
         @_appendContinueButton()
+      @isEnabled = true
 
     expand: ->
       $('html, body').animate( { scrollTop: @_element.offset().top } );
-      @_header.find('button.' + @_options.editButtonClass).hide()
+      if !@isLast then @_editButton.hide()
       @_header.siblings().slideDown(500)
-      @_options.onExpand(@_element[0])
+      @_options.onStepExpanded(@_element)
 
     collapse: (showEditButton) ->
-      editButton = @_header.find('button.' + @_options.editButtonClass)
-      if (showEditButton) then editButton.show() else editButton.hide()
+      if !@isLast then @_editButton.toggle(showEditButton)
       @_header.siblings().hide()
-      @_options.onCollapse(@_element[0])
-
-    reset: ->
-      @_header.siblings().show()
-      @_header.find('button.' + @_options.editButtonClass).remove()
-      @_element.find('button.' + @_options.continueButtonClass).remove()
+      @_options.onStepCollapsed(@_element)
 
     isComplete: ->
       return @_options.isStepComplete(@_element)
 
+    disable: ->
+      if @isEnabled
+        @isEnabled = false
+        @_editButton.hide()
+        @_continueButton.hide()
+        @_options.onStepDisabled(@_element)
+
+    enable:  ->
+      if !@isEnabled
+        @isEnabled = true
+        @_options.onStepEnabled(@_element)
+
     _appendEditButton: ->
-      button = $('<button type="button" class="' + @_options.editButtonClass + '">Edit</button>')
-      button.hide()
-      button.click => @_accordionForm.goBackToStep(@index)
-      @_header.append(button)
+      @_editButton = $('<button type="button" class="' + @_options.editButtonClass + '">' +
+        @_options.getEditButtonText(@_element) + '</button>')
+      @_editButton.hide()
+      @_editButton.click => @_accordionForm.goBackToStep(@index)
+      @_header.append(@_editButton)
 
     _appendContinueButton: ->
-      button = $('<button type="button" class="' + @_options.continueButtonClass + '">Continue</button>')
-      button.click => @_accordionForm.continue()
-      @_element.append(button)
-
+      @_continueButton = $('<button type="button" class="' + @_options.continueButtonClass + '">' +
+        @_options.getContinueButtonText(@_element) + '</button>')
+      @_continueButton.click => @_accordionForm.continue()
+      @_element.append(@_continueButton)
 )(jQuery)
